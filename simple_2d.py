@@ -11,7 +11,7 @@ hoomd.context.initialize("");
 # two types of particles
 
 # 2d box, 10x10
-box = hoomd.data.boxdim(L=10,dimensions=2) # dimensions=2 forces Lz=1
+box = hoomd.data.boxdim(L=30,dimensions=2) # dimensions=2 forces Lz=1
 snapshot = hoomd.data.make_snapshot(N=4,
                                     box=box,
                                     particle_types=['A', 'B'],
@@ -51,21 +51,21 @@ hoomd.init.read_snapshot(snapshot)
 # apparently performs well when there is only one interaction type.
 nl = hoomd.md.nlist.cell();
 
-# for now just use this random interaction type
-dpd = hoomd.md.pair.dpd(r_cut=1.0, nlist=nl, kT=0.8, seed=1);
+# use gaussian interaction because it is mathematicaaly simple
+gauss = hoomd.md.pair.gauss(r_cut=10, nlist=nl)
 
-dpd.pair_coeff.set('A', 'A', A=25.0, gamma = 1.0);
-dpd.pair_coeff.set('A', 'B', A=100.0, gamma = 1.0);
-dpd.pair_coeff.set('B', 'B', A=25.0, gamma = 1.0);
-# dpd doesn't exclude bonded atoms, so reset exclusions to nothing (before this line they are the bonded atoms).
-nl.reset_exclusions(exclusions = []);
+# same type particles repel
+gauss.pair_coeff.set('A', 'A',epsilon=-100.0, sigma=1.0);
+gauss.pair_coeff.set('B', 'B',epsilon=-100.0, sigma=1.0);
+# opposites attract
+gauss.pair_coeff.set('A', 'B',epsilon=1.0, sigma=1.0);
+
 # "apply harmonic bonds between the directly bonded particles"
 harmonic = hoomd.md.bond.harmonic();
-# dpd uses bond length zero to keep particles together (dpd pair repulsion will push them apart)
-harmonic.bond_coeff.set('polymer', k=100.0, r0=0);
+harmonic.bond_coeff.set('polymer', k=100.0, r0=0.5);
+
 
 hoomd.md.integrate.mode_standard(dt=0.01);
-
 group_all = hoomd.group.all();
 hoomd.md.integrate.nve(group=group_all);
 
@@ -74,7 +74,7 @@ hoomd.analyze.log(filename="log-output.log",
                   period=500,
                   overwrite=True);
 
-hoomd.dump.gsd("trajectory.gsd", period=10e3, group=group_all, overwrite=True);
+hoomd.dump.gsd("trajectory.gsd", period=20, group=group_all, overwrite=True);
 
 hoomd.run(5e4);
 
