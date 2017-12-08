@@ -1,3 +1,4 @@
+from __future__ import division
 import hoomd
 import hoomd.md
 import numpy as np
@@ -39,7 +40,7 @@ class Protein:
 
 
 
-def get_n_proteins(protein, n, separation, box_width):
+def get_n_proteins(protein, n, separation, box_width, two_d):
   """ given a protein made with the above class, a number n of proteins
   we want, a separation distance between each protein, and the width 
   of the simulation box we will be using, tiles the n proteins across the 
@@ -48,22 +49,27 @@ def get_n_proteins(protein, n, separation, box_width):
   bonds, a list of all the bonds
   and typeids, a list of all the typids
   to be used with the hoomd simulation.
+
+  2d is a bool for if we are doing 2d simulation (instead of 3d). I
+  haven't tested 3d at all.
   """
   ppp = protein.num_particles # "particles per protein"
   bpp = protein.num_bonds # "bonds per protein"
   pdims = protein.particle_dims
   positions = np.zeros((n * ppp, 3))
   bonds = np.zeros((n * bpp, 2))
-  adjustment = np.zeros(3)
+  adjustment = np.ones(3) * -box_width / 2.0
+  if two_d:
+    adjustment[2] = 0.
   # first, let's set all the positions
   for i in range(n):
     positions[ppp*i:ppp*(i+1),:] = (protein.positions + np.expand_dims(adjustment,0))
     adjustment[0] += pdims[0] + separation
-    if adjustment[0] + pdims[0] > box_width:
-      adjustment[0] = 0 # reset x adjustment, exceeded box width
+    if adjustment[0] + pdims[0] > box_width / 2:
+      adjustment[0] = -box_width/2 # reset x adjustment, exceeded box width
       adjustment[1] += pdims[1] + separation # increment y adjustment instead
-      if adjustment[1] + pdims[1] > box_width:
-        adjustment[1] = 0 # reset y adjustment, exceeded box width
+      if adjustment[1] + pdims[1] > box_width / 2:
+        adjustment[1] = -box_width/2 # reset y adjustment, exceeded box width
         adjustment[2] += pdims[2] + separation # increment z adjustment instead
   # now, lets set all the bonds
   for i in range(n):
@@ -84,8 +90,9 @@ bonds = np.array([[0,1]])
 protein = Protein(positions, typeids, bonds)
 
 box_width = 30
-num_proteins = 4
-positions, bonds, typeids = get_n_proteins(protein, num_proteins, separation=2, box_width=box_width)
+num_proteins = 40
+two_d = True
+positions, bonds, typeids = get_n_proteins(protein, num_proteins, separation=2, box_width=box_width, two_d=two_d)
 num_bonds = bonds.shape[0]
 num_particles = positions.shape[0]
 
@@ -141,7 +148,7 @@ harmonic = hoomd.md.bond.harmonic();
 harmonic.bond_coeff.set('polymer', k=100.0, r0=0.5);
 
 
-hoomd.md.integrate.mode_standard(dt=0.01);
+hoomd.md.integrate.mode_standard(dt=0.001);
 group_all = hoomd.group.all();
 hoomd.md.integrate.nve(group=group_all);
 
