@@ -13,6 +13,9 @@ hoomd.context.initialize("");
 
 class Protein:
   def __init__(self, positions, types, bonds):
+    """ given positions of particles, their types (as an index, not 'A' or 'B' but 0 or 1), 
+    and the bonds between particles (i.e. [[0,1]] is a bond between particle 0 and 1),
+    constructs a protein that can be used in the method below this class"""
     self.positions = np.copy(positions)
     self.origin_adjust_position() # adjust position
     self.bonds = bonds
@@ -36,20 +39,16 @@ class Protein:
 
 
 
- 
-
-
-
-""" give a particle type and a number of particles, want to
-- return a box that will contain all the particles
-- get particle types and bond types and number of particles for snapshot
-- get positions for snapshot
-- get typid list mapping particles to types
-- get number of bonds
-- get list of bonds
-"""
-
 def get_n_proteins(protein, n, separation, box_width):
+  """ given a protein made with the above class, a number n of proteins
+  we want, a separation distance between each protein, and the width 
+  of the simulation box we will be using, tiles the n proteins across the 
+  box and returns 
+  particles, a list of all the particles
+  bonds, a list of all the bonds
+  and typeids, a list of all the typids
+  to be used with the hoomd simulation.
+  """
   ppp = protein.num_particles # "particles per protein"
   bpp = protein.num_bonds # "bonds per protein"
   pdims = protein.particle_dims
@@ -72,6 +71,12 @@ def get_n_proteins(protein, n, separation, box_width):
   types = protein.types * n
   return positions, bonds, types
 
+"""
+So now, this is the only area we need to change to experiment with different protein
+structures. 
+I imagine we will also want to experiment with different interaction types
+and maybe bond types, but not sure if modularizing that would make it any easier.
+"""
 types = ['A','B']
 positions = np.array([[0,0,0],[0,1,0]])
 typeids = [0,1]
