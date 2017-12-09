@@ -8,7 +8,7 @@ hoomd.context.initialize("");
 
 positions = [[5*x, 0,0] for x in range(-10,10)]
 num_particles = 20
-types = ['R','A','B','C','D']
+types = ['R','A','B','C','D','E']
 bond_types = []
 box_width = 200
 
@@ -34,37 +34,84 @@ snapshot.particles.velocity[:] = np.random.normal(0.0,
 hoomd.init.read_snapshot(snapshot)
 
 rigid = hoomd.md.constrain.rigid();
+
+theta = np.arccos(1.5/9)
+scale = 1 # wanted to be able to scale proteins up in size but couldn't get COM coods right
+start_x = -2
+start_y = -3
+protein_edge_particles = []
+edge_particle_types = []
+# particles along first edge
+for i in range(1 + 9*scale):
+  x = np.cos(theta)*i + (start_x*scale)
+  y = np.sin(theta)*i + (start_y*scale)
+  protein_edge_particles.append([x,y,0])
+  if i <=3:
+    edge_particle_types.append('A')
+  else:
+    edge_particle_types.append('B')
+# particles along opposite edge
+for i in range(1 + 9*scale):
+  x = -np.cos(theta)*i + (start_x + 4)*scale
+  y = np.sin(theta)*i + (start_y)*scale
+  protein_edge_particles.append([x,y,0])
+  if i <= 3:
+    edge_particle_types.append('D')
+  else:
+    edge_particle_types.append('C')
+# particles along top edge
+for i in range(1,1*scale):
+  x = (start_x + 1.5)*scale + i
+  y = (start_y + 9)*scale
+  protein_edge_particles.append([x,y,0])
+  edge_particle_types.append('E')
+# particles along bottom edge
+for i in range(1,4*scale):
+  x = (start_x)*scale + i
+  y = (start_y)*scale
+  protein_edge_particles.append([x,y,0])
+  edge_particle_types.append('E')
+  
+
+
+
 # trapezoid particles, adjusted so R is approximately COM (just eyeballing)
 rigid.set_param('R',
-                types=['A','B','C','D'],
-                positions=[(-2,-3,0),(-0.5,6,0),
-                           (0.5,6,0),(2,-3,0)]);
+                types=edge_particle_types,
+                positions=protein_edge_particles);
 rigid.create_bodies()
 
 
 nl = hoomd.md.nlist.cell();
 # use gaussian interaction because it is mathematicaaly simple
-gauss = hoomd.md.pair.gauss(r_cut=50, nlist=nl)
+gauss = hoomd.md.pair.gauss(r_cut=2, nlist=nl)
 # same type particles repel
-gauss.pair_coeff.set('A', 'A',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('B', 'B',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('C', 'C',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('D', 'D',epsilon=20, sigma=2.0);
+gauss.pair_coeff.set('A', 'A',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('B', 'B',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('C', 'C',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('D', 'D',epsilon=500, sigma=0.5);
 # these need to attract so proteins as0le
-gauss.pair_coeff.set('A', 'D',epsilon=-100, sigma=2.0);
-gauss.pair_coeff.set('B', 'C',epsilon=-100, sigma=2.0);
+gauss.pair_coeff.set('A', 'D',epsilon=-500, sigma=0.5);
+gauss.pair_coeff.set('B', 'C',epsilon=-500, sigma=0.5);
 # everything else repels
-gauss.pair_coeff.set('A', 'B',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('A', 'C',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('B', 'D',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('C', 'D',epsilon=20, sigma=2.0);
+gauss.pair_coeff.set('A', 'B',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('A', 'C',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('B', 'D',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('C', 'D',epsilon=500, sigma=0.5);
 
-# center of mass particles don't do anything
+# R does nothing
 gauss.pair_coeff.set('R', 'R',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'A',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'B',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'C',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'D',epsilon=0, sigma=2.0);
+
+gauss.pair_coeff.set('E', 'E',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'R',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'A',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'B',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'C',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'D',epsilon=500, sigma=2.0);
 
 
 rigidTest = hoomd.group.rigid_center();
