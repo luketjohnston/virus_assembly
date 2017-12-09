@@ -106,12 +106,12 @@ gauss.pair_coeff.set('R', 'B',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'C',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'D',epsilon=0, sigma=2.0);
 
-gauss.pair_coeff.set('E', 'E',epsilon=10, sigma=2.0);
-gauss.pair_coeff.set('E', 'R',epsilon=10, sigma=2.0);
-gauss.pair_coeff.set('E', 'A',epsilon=10, sigma=2.0);
-gauss.pair_coeff.set('E', 'B',epsilon=10, sigma=2.0);
-gauss.pair_coeff.set('E', 'C',epsilon=10, sigma=2.0);
-gauss.pair_coeff.set('E', 'D',epsilon=10, sigma=2.0);
+gauss.pair_coeff.set('E', 'E',epsilon=10, sigma=0.5);
+gauss.pair_coeff.set('E', 'R',epsilon=10, sigma=0.5);
+gauss.pair_coeff.set('E', 'A',epsilon=10, sigma=0.5);
+gauss.pair_coeff.set('E', 'B',epsilon=10, sigma=0.5);
+gauss.pair_coeff.set('E', 'C',epsilon=10, sigma=0.5);
+gauss.pair_coeff.set('E', 'D',epsilon=10, sigma=0.5);
 
 
 rigidTest = hoomd.group.rigid_center();
