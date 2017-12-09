@@ -88,7 +88,8 @@ and maybe bond types, but not sure if modularizing that would make it any easier
 """
 types = ['A','B','C','D']
 positions = np.array([[0,0,0],[1.5,9,0],[2.5,9,0],[4,0,0]])
-positions = np.array([[0,0,0],[0,1,0],[1,1,0],[1,0,0]])
+positions = np.array([[0,0,0],[3,4,0],[4,4,0],[7,0,0]])
+#positions = np.array([[0,0,0],[0,1,0],[1,1,0],[1,0,0]])
 typeids = [0,1,2,3]
 bonds = np.array([[0,1],[1,2],[2,3],[3,0]])
 bond_types = ['ab','bc','cd','da']
@@ -102,6 +103,8 @@ num_bonds = bonds.shape[0]
 num_particles = positions.shape[0]
 
 bond_types = ['ab','bc','cd','da']
+
+types = ['R','A','B','C','D']
     
 
 
@@ -142,7 +145,6 @@ nl = hoomd.md.nlist.cell();
 
 # use gaussian interaction because it is mathematicaaly simple
 gauss = hoomd.md.pair.gauss(r_cut=10, nlist=nl)
-
 # same type particles repel
 gauss.pair_coeff.set('A', 'A',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('B', 'B',epsilon=0, sigma=1.0);
@@ -156,6 +158,8 @@ gauss.pair_coeff.set('A', 'B',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('A', 'C',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('B', 'D',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('C', 'D',epsilon=0, sigma=1.0);
+
+#hoomd.md.constrain.distance()
 
 #gauss.pair_coeff.set('A', 'A',epsilon=-1.0, sigma=1.0);
 #gauss.pair_coeff.set('B', 'B',epsilon=-1.0, sigma=1.0);
@@ -178,10 +182,14 @@ harmonic = hoomd.md.bond.harmonic();
 #harmonic.bond_coeff.set('cd', k=100.0, r0=9.12);
 #harmonic.bond_coeff.set('da', k=100.0, r0=4);
 
-harmonic.bond_coeff.set('ab', k=100.0, r0=1);
+#harmonic.bond_coeff.set('ab', k=100.0, r0=1);
+#harmonic.bond_coeff.set('bc', k=100.0, r0=1);
+#harmonic.bond_coeff.set('cd', k=100.0, r0=1);
+#harmonic.bond_coeff.set('da', k=100.0, r0=1);
+harmonic.bond_coeff.set('ab', k=100.0, r0=5);
 harmonic.bond_coeff.set('bc', k=100.0, r0=1);
-harmonic.bond_coeff.set('cd', k=100.0, r0=1);
-harmonic.bond_coeff.set('da', k=100.0, r0=1);
+harmonic.bond_coeff.set('cd', k=100.0, r0=5);
+harmonic.bond_coeff.set('da', k=100.0, r0=7);
 
 
 hoomd.md.integrate.mode_standard(dt=0.001);
