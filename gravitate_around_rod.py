@@ -15,7 +15,7 @@ bond_types = []
 
 # Place the type R central particles
 # 2d box, 10x10
-box = hoomd.data.boxdim(L=box_width,dimensions=2) # dimensions=2 forces Lz=1
+box = hoomd.data.boxdim(L=box_width,dimensions=3) # dimensions=2 forces Lz=1
 snapshot = hoomd.data.make_snapshot(N=num_particles,
                                     box=box,
                                     particle_types=types,
@@ -27,9 +27,11 @@ snapshot.particles.typeid[:] = [0 for x in positions]
 for i in range(box_width):
   snapshot.particles.typeid[i+num_particles-box_width] = 5
 
+snapshot.particles.moment_inertia[:] = [[0,0,10] for x in range(num_particles)]
+
 # set gaussian random velocity for all proteins
 snapshot.particles.velocity[:] = np.random.normal(0.0,
-  np.sqrt(0.1 / 1.0), [snapshot.particles.N, 3]);
+  np.sqrt(2 / 1.0), [snapshot.particles.N, 3]);
 
 # initialize hoomd with this snapshot
 hoomd.init.read_snapshot(snapshot)
@@ -46,13 +48,13 @@ nl = hoomd.md.nlist.cell();
 # use gaussian interaction because it is mathematicaaly simple
 gauss = hoomd.md.pair.gauss(r_cut=10, nlist=nl)
 # same type particles repel
-gauss.pair_coeff.set('A', 'A',epsilon=0, sigma=1.0);
-gauss.pair_coeff.set('B', 'B',epsilon=0, sigma=1.0);
-gauss.pair_coeff.set('C', 'C',epsilon=0, sigma=1.0);
-gauss.pair_coeff.set('D', 'D',epsilon=0, sigma=1.0);
-# these need to attract so proteins as0le
-gauss.pair_coeff.set('A', 'D',epsilon=100, sigma=1.0);
-gauss.pair_coeff.set('B', 'C',epsilon=100, sigma=1.0);
+gauss.pair_coeff.set('A', 'A',epsilon=20, sigma=1.0);
+gauss.pair_coeff.set('B', 'B',epsilon=20, sigma=1.0);
+gauss.pair_coeff.set('C', 'C',epsilon=100, sigma=1.0);
+gauss.pair_coeff.set('D', 'D',epsilon=100, sigma=1.0);
+# these need to attract so proteins 
+gauss.pair_coeff.set('A', 'D',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('B', 'C',epsilon=0, sigma=1.0);
 # everything else is neutral
 gauss.pair_coeff.set('A', 'B',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('A', 'C',epsilon=0, sigma=1.0);
@@ -60,7 +62,7 @@ gauss.pair_coeff.set('B', 'D',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('C', 'D',epsilon=0, sigma=1.0);
 
 # center of mass particles don't do anything
-gauss.pair_coeff.set('R', 'R',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('R', 'R',epsilon=20, sigma=1.0);
 gauss.pair_coeff.set('R', 'A',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('R', 'B',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('R', 'C',epsilon=0, sigma=1.0);
