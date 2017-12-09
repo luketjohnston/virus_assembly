@@ -8,7 +8,7 @@ hoomd.context.initialize("");
 
 positions = [[5*x, 0,0] for x in range(-10,10)]
 num_particles = 20
-types = ['R','A','B','C','D']
+types = ['R','A','B','C','D','E']
 bond_types = []
 box_width = 200
 
@@ -36,27 +36,42 @@ hoomd.init.read_snapshot(snapshot)
 rigid = hoomd.md.constrain.rigid();
 
 theta = np.arccos(1.5/9)
+scale = 1 # wanted to be able to scale proteins up in size but couldn't get COM coods right
 start_x = -2
 start_y = -3
 protein_edge_particles = []
 edge_particle_types = []
 # particles along first edge
-for i in range(10):
-  x = np.cos(theta)*i + start_x
-  y = np.sin(theta)*i + start_y
+for i in range(1 + 9*scale):
+  x = np.cos(theta)*i + (start_x*scale)
+  y = np.sin(theta)*i + (start_y*scale)
   protein_edge_particles.append([x,y,0])
-  edge_particle_types.append('A')
-# particles along second edge the top
-for i in range(10):
-  x = np.cos(theta)*i + start_x + 2.5
-  y = -np.sin(theta)*i + start_y + 9
+  if i <=3:
+    edge_particle_types.append('A')
+  else:
+    edge_particle_types.append('B')
+# particles along opposite edge
+for i in range(1 + 9*scale):
+  x = -np.cos(theta)*i + (start_x + 4)*scale
+  y = np.sin(theta)*i + (start_y)*scale
   protein_edge_particles.append([x,y,0])
-  edge_particle_types.append('D')
+  if i <= 3:
+    edge_particle_types.append('D')
+  else:
+    edge_particle_types.append('C')
+# particles along top edge
+for i in range(1,1*scale):
+  x = (start_x + 1.5)*scale + i
+  y = (start_y + 9)*scale
+  protein_edge_particles.append([x,y,0])
+  edge_particle_types.append('E')
 # particles along bottom edge
-protein_edge_particles += [[start_x + 1, start_y, 0],[start_x+2,start_y,0],[start_x+3,start_y,0]]
-edge_particle_types += ['C','C','C']
-
-
+for i in range(1,4*scale):
+  x = (start_x)*scale + i
+  y = (start_y)*scale
+  protein_edge_particles.append([x,y,0])
+  edge_particle_types.append('E')
+  
 
 
 
@@ -84,12 +99,19 @@ gauss.pair_coeff.set('A', 'C',epsilon=500, sigma=0.5);
 gauss.pair_coeff.set('B', 'D',epsilon=500, sigma=0.5);
 gauss.pair_coeff.set('C', 'D',epsilon=500, sigma=0.5);
 
-# center of mass particles don't do anything
+# R does nothing
 gauss.pair_coeff.set('R', 'R',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'A',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'B',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'C',epsilon=0, sigma=2.0);
 gauss.pair_coeff.set('R', 'D',epsilon=0, sigma=2.0);
+
+gauss.pair_coeff.set('E', 'E',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'R',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'A',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'B',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'C',epsilon=500, sigma=2.0);
+gauss.pair_coeff.set('E', 'D',epsilon=500, sigma=2.0);
 
 
 rigidTest = hoomd.group.rigid_center();
