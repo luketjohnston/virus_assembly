@@ -19,15 +19,18 @@ uc = hoomd.lattice.unitcell(N = 1,
                                                0,
                                                1/12*1.0*8**2]],
                             orientation = [[1, 0, 0, 0]]);
-system = hoomd.init.create_lattice(unitcell=uc, n=[1,1,10]);
+system = hoomd.init.create_lattice(unitcell=uc, n=[1,1,5]);
 
 # Add consituent particles of type A and create the rods
 system.particles.types.add('A');
+system.particles.types.add('B');
+system.particles.types.add('C');
+system.particles.types.add('D');
 rigid = hoomd.md.constrain.rigid();
 rigid.set_param('R',
-                types=['A']*8,
-                positions=[(-1,0,0),(-2,0,0),(-3,0,0),(-4,0,0),
-                           (1,0,0),(2,0,0),(3,0,0),(4,0,0)]);
+                types=['A','B','C','D'],
+                positions=[(0,0,0),(1.5,9,0),
+                           (2.5,9,0),(0,4,0)]);
 
 rigid.create_bodies()
 
