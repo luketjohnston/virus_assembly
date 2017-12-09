@@ -34,30 +34,55 @@ snapshot.particles.velocity[:] = np.random.normal(0.0,
 hoomd.init.read_snapshot(snapshot)
 
 rigid = hoomd.md.constrain.rigid();
+
+theta = np.arccos(1.5/9)
+start_x = -2
+start_y = -3
+protein_edge_particles = []
+edge_particle_types = []
+# particles along first edge
+for i in range(10):
+  x = np.cos(theta)*i + start_x
+  y = np.sin(theta)*i + start_y
+  protein_edge_particles.append([x,y,0])
+  edge_particle_types.append('A')
+# particles along second edge the top
+for i in range(10):
+  x = np.cos(theta)*i + start_x + 2.5
+  y = -np.sin(theta)*i + start_y + 9
+  protein_edge_particles.append([x,y,0])
+  edge_particle_types.append('D')
+# particles along bottom edge
+protein_edge_particles += [[start_x + 1, start_y, 0],[start_x+2,start_y,0],[start_x+3,start_y,0]]
+edge_particle_types += ['C','C','C']
+
+
+
+
+
 # trapezoid particles, adjusted so R is approximately COM (just eyeballing)
 rigid.set_param('R',
-                types=['A','B','C','D'],
-                positions=[(-2,-3,0),(-0.5,6,0),
-                           (0.5,6,0),(2,-3,0)]);
+                types=edge_particle_types,
+                positions=protein_edge_particles);
 rigid.create_bodies()
 
 
 nl = hoomd.md.nlist.cell();
 # use gaussian interaction because it is mathematicaaly simple
-gauss = hoomd.md.pair.gauss(r_cut=50, nlist=nl)
+gauss = hoomd.md.pair.gauss(r_cut=2, nlist=nl)
 # same type particles repel
-gauss.pair_coeff.set('A', 'A',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('B', 'B',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('C', 'C',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('D', 'D',epsilon=20, sigma=2.0);
+gauss.pair_coeff.set('A', 'A',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('B', 'B',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('C', 'C',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('D', 'D',epsilon=500, sigma=0.5);
 # these need to attract so proteins as0le
-gauss.pair_coeff.set('A', 'D',epsilon=-100, sigma=2.0);
-gauss.pair_coeff.set('B', 'C',epsilon=-100, sigma=2.0);
+gauss.pair_coeff.set('A', 'D',epsilon=-500, sigma=0.5);
+gauss.pair_coeff.set('B', 'C',epsilon=-500, sigma=0.5);
 # everything else repels
-gauss.pair_coeff.set('A', 'B',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('A', 'C',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('B', 'D',epsilon=20, sigma=2.0);
-gauss.pair_coeff.set('C', 'D',epsilon=20, sigma=2.0);
+gauss.pair_coeff.set('A', 'B',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('A', 'C',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('B', 'D',epsilon=500, sigma=0.5);
+gauss.pair_coeff.set('C', 'D',epsilon=500, sigma=0.5);
 
 # center of mass particles don't do anything
 gauss.pair_coeff.set('R', 'R',epsilon=0, sigma=2.0);
