@@ -6,10 +6,10 @@ import numpy as np
 
 hoomd.context.initialize("");
 box_width = 200
-positions = [[5*x, 0,0] for x in range(-10,10)]
+positions = [[x, 0,-1**x] for x in range(-90,90)]
 for i in range(box_width):
   positions.append([i - box_width / 2,0,0])
-num_particles = 20+box_width
+num_particles = 180+box_width
 types = ['R','A','B','C','D','E']
 bond_types = []
 
@@ -27,7 +27,7 @@ snapshot.particles.typeid[:] = [0 for x in positions]
 for i in range(box_width):
   snapshot.particles.typeid[i+num_particles-box_width] = 5
 
-snapshot.particles.moment_inertia[:] = [[0,0,10] for x in range(num_particles)]
+snapshot.particles.moment_inertia[:] = [[10,10,10] for x in range(num_particles)]
 
 # set gaussian random velocity for all proteins
 snapshot.particles.velocity[:] = np.random.normal(0.0,
@@ -69,8 +69,8 @@ gauss.pair_coeff.set('R', 'C',epsilon=0, sigma=1.0);
 gauss.pair_coeff.set('R', 'D',epsilon=0, sigma=1.0);
 
 gauss.pair_coeff.set('E', 'R',epsilon=0, sigma=1.0);
-gauss.pair_coeff.set('E', 'A',epsilon=-200, sigma=1.0);
-gauss.pair_coeff.set('E', 'B',epsilon=-200, sigma=1.0);
+gauss.pair_coeff.set('E', 'A',epsilon=-300, sigma=1.0);
+gauss.pair_coeff.set('E', 'B',epsilon=-300, sigma=1.0);
 gauss.pair_coeff.set('E', 'C',epsilon=-100, sigma=1.0);
 gauss.pair_coeff.set('E', 'D',epsilon=-100, sigma=1.0);
 gauss.pair_coeff.set('E', 'E',epsilon=000, sigma=1.0);
