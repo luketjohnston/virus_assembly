@@ -37,7 +37,8 @@ rigid.create_bodies()
 rigidTest = hoomd.group.rigid_center();
 hoomd.md.integrate.langevin(group=rigidTest, kT=1.0, seed=42);
 
-hoomd.dump.gsd("trajectory.gsd", period=20, group=rigidTest, overwrite=True);
+
+hoomd.dump.gsd("trajectory.gsd", period=20, group=hoomd.group.all(), overwrite=True);
 
 hoomd.run(5e4);
 
