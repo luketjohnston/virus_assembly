@@ -13,7 +13,7 @@ hoomd.context.initialize("");
 # two types of particles
 
 class Protein:
-  def __init__(self, positions, types, bonds):
+  def __init__(self, positions, types, bonds, bond_types):
     """ given positions of particles, their types (as an index, not 'A' or 'B' but 0 or 1), 
     and the bonds between particles (i.e. [[0,1]] is a bond between particle 0 and 1),
     constructs a protein that can be used in the method below this class"""
@@ -21,6 +21,7 @@ class Protein:
     self.origin_adjust_position() # adjust position
     self.bonds = bonds
     self.types = types
+    self.bond_types = bond_types
     self.num_particles = self.positions.shape[0]
     self.num_bonds = self.bonds.shape[0]
     # dimensions of particle
@@ -72,10 +73,12 @@ def get_n_proteins(protein, n, separation, box_width, two_d):
         adjustment[1] = -box_width/2 # reset y adjustment, exceeded box width
         adjustment[2] += pdims[2] + separation # increment z adjustment instead
   # now, lets set all the bonds
+  all_bond_types = []
   for i in range(n):
     bonds[bpp*i:bpp*(i+1)] = protein.bonds + ppp*i
+    all_bond_types += bond_types
   types = protein.types * n
-  return positions, bonds, types
+  return positions, bonds, types, all_bond_types
 
 """
 So now, this is the only area we need to change to experiment with different protein
@@ -83,20 +86,22 @@ structures.
 I imagine we will also want to experiment with different interaction types
 and maybe bond types, but not sure if modularizing that would make it any easier.
 """
-types = ['A','B']
-positions = np.array([[0,0,0],[0,1,0]])
-typeids = [0,1]
-bonds = np.array([[0,1]])
-protein = Protein(positions, typeids, bonds)
+types = ['A','B','C','D']
+positions = np.array([[0,0,0],[1.5,9,0],[2.5,9,0],[4,0,0]])
+positions = np.array([[0,0,0],[0,1,0],[1,1,0],[1,0,0]])
+typeids = [0,1,2,3]
+bonds = np.array([[0,1],[1,2],[2,3],[3,0]])
+bond_types = ['ab','bc','cd','da']
+protein = Protein(positions, typeids, bonds, bond_types)
 
 box_width = 30
-num_proteins = 40
+num_proteins = 1
 two_d = True
-positions, bonds, typeids = get_n_proteins(protein, num_proteins, separation=2, box_width=box_width, two_d=two_d)
+positions, bonds, typeids, bond_types = get_n_proteins(protein, num_proteins, separation=2, box_width=box_width, two_d=two_d)
 num_bonds = bonds.shape[0]
 num_particles = positions.shape[0]
 
-bond_types = ['polymer']
+bond_types = ['ab','bc','cd','da']
     
 
 
@@ -119,6 +124,7 @@ snapshot.particles.typeid[:] = typeids
 
 snapshot.bonds.resize(num_bonds)
 snapshot.bonds.group[:] = bonds
+snapshot.bonds.types = bond_types
 
 
 # set gaussian random velocity for all particles
@@ -138,14 +144,44 @@ nl = hoomd.md.nlist.cell();
 gauss = hoomd.md.pair.gauss(r_cut=10, nlist=nl)
 
 # same type particles repel
-gauss.pair_coeff.set('A', 'A',epsilon=-100.0, sigma=1.0);
-gauss.pair_coeff.set('B', 'B',epsilon=-100.0, sigma=1.0);
-# opposites attract
-gauss.pair_coeff.set('A', 'B',epsilon=1.0, sigma=1.0);
+gauss.pair_coeff.set('A', 'A',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('B', 'B',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('C', 'C',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('D', 'D',epsilon=0, sigma=1.0);
+# these need to attract so proteins as0le
+gauss.pair_coeff.set('A', 'D',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('B', 'C',epsilon=0, sigma=1.0);
+# everything else repels
+gauss.pair_coeff.set('A', 'B',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('A', 'C',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('B', 'D',epsilon=0, sigma=1.0);
+gauss.pair_coeff.set('C', 'D',epsilon=0, sigma=1.0);
+
+#gauss.pair_coeff.set('A', 'A',epsilon=-1.0, sigma=1.0);
+#gauss.pair_coeff.set('B', 'B',epsilon=-1.0, sigma=1.0);
+#gauss.pair_coeff.set('C', 'C',epsilon=-1.0, sigma=1.0);
+#gauss.pair_coeff.set('D', 'D',epsilon=-1.0, sigma=1.0);
+## these need to attract so proteins assemble
+#gauss.pair_coeff.set('A', 'D',epsilon=1.0, sigma=1.0);
+#gauss.pair_coeff.set('B', 'C',epsilon=1.0, sigma=1.0);
+## everything else repels
+#gauss.pair_coeff.set('A', 'B',epsilon=-1.0, sigma=1.0);
+#gauss.pair_coeff.set('A', 'C',epsilon=-1.0, sigma=1.0);
+#gauss.pair_coeff.set('B', 'D',epsilon=-1.0, sigma=1.0);
+#gauss.pair_coeff.set('C', 'D',epsilon=-1.0, sigma=1.0);
+
 
 # "apply harmonic bonds between the directly bonded particles"
 harmonic = hoomd.md.bond.harmonic();
-harmonic.bond_coeff.set('polymer', k=100.0, r0=0.5);
+#harmonic.bond_coeff.set('ab', k=100.0, r0=9.12);
+#harmonic.bond_coeff.set('bc', k=100.0, r0=1);
+#harmonic.bond_coeff.set('cd', k=100.0, r0=9.12);
+#harmonic.bond_coeff.set('da', k=100.0, r0=4);
+
+harmonic.bond_coeff.set('ab', k=100.0, r0=1);
+harmonic.bond_coeff.set('bc', k=100.0, r0=1);
+harmonic.bond_coeff.set('cd', k=100.0, r0=1);
+harmonic.bond_coeff.set('da', k=100.0, r0=1);
 
 
 hoomd.md.integrate.mode_standard(dt=0.001);
